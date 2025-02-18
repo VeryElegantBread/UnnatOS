@@ -1,6 +1,7 @@
 use indextree::{Arena, NodeId};
 use mlua::{prelude::{LuaTable, LuaError}, Error, Lua};
 use std::sync::{Arc, Mutex};
+use reqwest::blocking;
 
 use crate::{get_item, save_file_system, Item};
 
@@ -172,6 +173,16 @@ pub fn run(file_system: &mut Arc<Mutex<Arena<Item>>>, root: NodeId, file_path: &
     })?;
     lua.globals().set("set_text", lua_set_text)?;
 
+    let lua_get_data = lua.create_function(|_, url: String| {
+        if let Ok(data) = blocking::get(url) {
+            if let Ok(contents) = data.text() {
+                return Ok(Some(contents));
+            };
+        };
+        Ok(None)
+    })?;
+    lua.globals().set("get_data", lua_get_data)?;
+
     let file_system_clone = Arc::clone(file_system);
     let root_clone = root;
     let file_path_clone = file_path.to_string();
@@ -181,7 +192,7 @@ pub fn run(file_system: &mut Arc<Mutex<Arena<Item>>>, root: NodeId, file_path: &
     })?;
     lua.globals().set("save_file_system", lua_save_file_system)?;
 
-    let lua_exit_os = lua.create_function(move |_, (): ()| -> Result<(), LuaError> {
+    let lua_exit_os = lua.create_function(|_, (): ()| -> Result<(), LuaError> {
         std::process::exit(0);
     })?;
     lua.globals().set("exit_os", lua_exit_os)?;

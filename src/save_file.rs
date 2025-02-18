@@ -92,7 +92,8 @@ pub fn load_file_system(path: &str) -> std::io::Result<(Arena<Item>, NodeId)> {
     backups.append(se, &mut file_system);
     let write = file_system.new_node(Item::new("write", include_str!("lua_scripts/write.lua"), false, true));
     backups.append(write, &mut file_system);
-
+    let download = file_system.new_node(Item::new("download", include_str!("lua_scripts/download.lua"), false, true));
+    backups.append(download, &mut file_system);
 
     Ok((file_system, *root))
 }
@@ -126,6 +127,8 @@ pub fn new(path: &str) {
     programs.append(se, &mut file_system);
     let write = file_system.new_node(Item::new("write", include_str!("lua_scripts/write.lua"), true, true));
     programs.append(write, &mut file_system);
+    let download = file_system.new_node(Item::new("download", include_str!("lua_scripts/download.lua"), true, true));
+    programs.append(download, &mut file_system);
     
     let _ = save_file_system(&file_system, root, path);
 }

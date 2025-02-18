@@ -93,6 +93,7 @@ while true do
 		print("write: Write text to an item (>)")
 		print("se: Give true or false to set an item as executable or not executable (chmod +x)")
 		print("remove: Remove an item (rm)")
+		print("download: get a file from the internet (curl)")
 		print("save: Save the file system")
 		print("exit: Save the file system and exit the operating system (shutdown)")
 		print("You can also put the path to an executable item to run that")
