@@ -43,14 +43,14 @@ root
 	│   ├── se
 	│   └── write
 	└── Backups
-		├── read
-		├── items
-		├── exit
-		├── new
-		├── remove
-		├── save
-		├── se
-		└── write
+	    ├── read
+	    ├── items
+	    ├── exit
+	    ├── new
+	    ├── remove
+	    ├── save
+	    ├── se
+	    └── write
 ```
 Yes, they are the same items in Programs and Backups. The ones in Backups are immutable incase you mess up the ones in Programs.
 ## What to do if you messed up something in your system
