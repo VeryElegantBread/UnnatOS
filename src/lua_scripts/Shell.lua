@@ -64,9 +64,68 @@ else
 	programs_item = "Programs"
 end
 
+local past_commands = {}
+
 while true do
-	io.write("$ ")
-	local base_input = io.read()
+	local base_input = ""
+	local current_string = ""
+	local cursor_pos = 0
+	local command_num = 0
+	while true do
+		cursor_pos = math.min(cursor_pos, string.len(current_string))
+		io.write("\27[2K")
+		io.write("\27[0G")
+		io.write("$ " .. current_string)
+		io.write("\27[" .. cursor_pos + 3 .. "G")
+		io.flush()
+		local key = get_key_press()
+		if key[1] == "c" and key[2] == "Ctrl" then
+			exit_os()
+		elseif key[2] == "Left" then
+			cursor_pos = math.max(cursor_pos - 1, 0)
+		elseif key[2] == "Right" then
+			cursor_pos = cursor_pos + 1
+		elseif key[2] == "Up" then
+			command_num = math.min(command_num + 1, #past_commands)
+			if command_num == 0 then
+				current_string = base_input
+			else
+				current_string = past_commands[#past_commands - command_num + 1]
+			end
+		elseif key[2] == "Down" then
+			command_num = math.max(command_num - 1, 0)
+			if command_num == 0 then
+				current_string = base_input
+			else
+				current_string = past_commands[#past_commands - command_num + 1]
+			end
+		elseif key[1] == "\n" then
+			if string.gsub(current_string, "%s", "") ~= "" then
+				table.insert(past_commands, current_string)
+			end
+			base_input = current_string
+			io.write("\n")
+			break
+		elseif key[2] == "Backspace" then
+			if command_num > 0 then
+				base_input = past_commands[#past_commands - command_num + 1]
+				command_num = 0
+			end
+			if cursor_pos > 0 then
+				base_input = string.sub(base_input, 1, cursor_pos - 1) .. string.sub(base_input, cursor_pos + 1)
+				cursor_pos = cursor_pos - 1
+			end
+			current_string = base_input
+		elseif key[1] then
+			if command_num > 0 then
+				base_input = past_commands[#past_commands - command_num + 1]
+				command_num = 0
+			end
+			base_input = string.sub(base_input, 1, cursor_pos) .. key[1] .. string.sub(base_input, cursor_pos + 1)
+			cursor_pos = cursor_pos + 1
+			current_string = base_input
+		end
+	end
 	Input = string.sub(base_input, 1, string.len(base_input)) .. " "
 
 	local item_path = string.sub(Input, 1, string.find(Input, " ") - 1)
