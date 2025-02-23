@@ -1,7 +1,6 @@
 use indextree::{Arena, NodeId};
 use mlua::{prelude::{LuaTable, LuaError}, Error, Lua};
-use termion::{input::TermRead, raw::IntoRawMode};
-use std::{io::{self, Write}, sync::{Arc, Mutex}};
+use std::sync::{Arc, Mutex};
 use reqwest::blocking;
 
 use crate::{get_item, save_file_system, Item};
@@ -153,7 +152,7 @@ pub fn run(file_system: &mut Arc<Mutex<Arena<Item>>>, root: NodeId, file_path: &
             return Ok(true);
         } else {
             return Err(LuaError::external("Could't find the item"));
-        }
+        };
     })?;
     lua.globals().set("set_executable", lua_set_executable)?;
 
@@ -183,27 +182,6 @@ pub fn run(file_system: &mut Arc<Mutex<Arena<Item>>>, root: NodeId, file_path: &
         Ok(None)
     })?;
     lua.globals().set("get_data", lua_get_data)?;
-
-    let lua_get_key_press = lua.create_function(|_, (): ()| {
-        let mut stdout = io::stdout().into_raw_mode().unwrap();
-        stdout.flush().unwrap();
-
-        let key = io::stdin().keys().next().unwrap().unwrap();
-        match key {
-            termion::event::Key::Char(char) => Ok(vec![Some(char.to_string()), None]),
-            termion::event::Key::Alt(char) => Ok(vec![Some(char.to_string()), Some("Alt".to_string())]),
-            termion::event::Key::Ctrl(char) => Ok(vec![Some(char.to_string()), Some("Ctrl".to_string())]),
-            termion::event::Key::F(number) => Ok(vec![None, Some(format!("F{number}"))]),
-            termion::event::Key::Esc => Ok(vec![None, Some("Esc".to_string())]),
-            termion::event::Key::Up => Ok(vec![None, Some("Up".to_string())]),
-            termion::event::Key::Down => Ok(vec![None, Some("Down".to_string())]),
-            termion::event::Key::Left => Ok(vec![None, Some("Left".to_string())]),
-            termion::event::Key::Right => Ok(vec![None, Some("Right".to_string())]),
-            termion::event::Key::Backspace => Ok(vec![None, Some("Backspace".to_string())]),
-            _ => Ok(vec![None, None]),
-        }
-    })?;
-    lua.globals().set("get_key_press", lua_get_key_press)?;
 
     let file_system_clone = Arc::clone(file_system);
     let root_clone = root;
