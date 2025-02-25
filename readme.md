@@ -55,3 +55,5 @@ root
 Yes, they are the same items in Programs and Backups. The ones in Backups are immutable incase you mess up the ones in Programs.
 ## What to do if you messed up something in your system
 Run `UnnatOS -s path/to/your/file`. This will put you in safe mode, which doesn't run Startup.lua and uses the programs in Backups instead of Programs. From there, you can fix the issue.
+## More programs
+For more programs for UnnatOS, take a look at [UnnatOS-Programs](https://github.com/VeryElegantBread/UnnatOS-Programs/)
