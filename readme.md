@@ -20,7 +20,7 @@ After that, you can run `UnnatOS path/to/where/you/saved/it`
 Once in the OS, you can run `help` to view all the default commands. Those commands are stored in System/Programs and you can edit the code for all of them or add new ones.
 The cool part about UnnatOS is that you can easily customize it a lot. If you don't like how a command works, just change how it works. If you want a command that doesn't exist, just make it exist. I you don't like how the shell works, just make a new shell and run it in System/Startup.lua. All of it is just A bit of lua code away. That being said, the default `write` command requires you to put \n for newlines, which can make it hard to think about how the code you're typing in works, debug it, and copy and paste in code. While I encourage you to make your own solutions to problems like this, it can be hard to make a solution with the default write command. So, if you want a better way of putting text into an item, put these commands into UnnatOS and then use the `textwriter` command to put text into an item.
 ```
-download https://raw.githubusercontent.com/VeryElegantBread/UnnatOS-Programs/main/textwriter System/Programs/textwriter
+download https://raw.githubusercontent.com/VeryElegantBread/UnnatOS-Programs/main/textwriter.lua System/Programs/textwriter
 se System/Programs/textwriter
 ```
 ## Customization
