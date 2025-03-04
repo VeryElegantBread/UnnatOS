@@ -51,13 +51,78 @@ function PathToString(input_path)
 end
 
 CurrentItem = {}
+local programs_item
+
+function EvaluateCommand(command)
+	local item_path = command:sub(1, command:find(" ") - 1)
+
+	if command:gsub("%s", "") == "" then
+		return {}
+	elseif item_path == "move" then
+		local new_item = StringToPath(SplitString(command, " ")[2])
+		if item_exists(new_item) then
+			CurrentItem = new_item
+		else
+			print("item not found: " .. PathToString(new_item))
+		end
+		return {}
+	elseif item_path == "pci" then
+		return PathToString(CurrentItem)
+	elseif item_path == "help" then
+		return {
+			"Base Commands:",
+			"help: Print this",
+			"move: Move into another item (cd)",
+			"pci: Print current item (pwd)",
+			"read: Print text inside item (cat)",
+			"items: Print names of items in an item, along with if they are immutable and if they are executable (ls)",
+			"new: Make a new item (touch)",
+			"write: Write text to an item (>)",
+			"se: Give true or false to set an item as executable or not executable (chmod +x)",
+			"remove: Remove an item (rm)",
+			"download: get a file from the internet (curl)",
+			"save: Save the file system",
+			"exit: Save the file system and exit the operating system (shutdown)",
+			"You can also put the path to an executable item to run that",
+			"Pipe with \" -> \"",
+		}
+	elseif item_exists({ "System", programs_item, item_path }) then
+		if is_executable({ "System", programs_item, item_path }) then
+			local returned_data = require("System/" .. programs_item .. "/" .. item_path)
+			package.loaded["System/" .. programs_item .. "/" .. item_path] = nil
+			if type(returned_data) == "table" then
+				return returned_data
+			end
+			return {}
+		else
+			print("item not executable: System/" .. programs_item .. "/" .. item_path)
+			return {}
+		end
+	elseif item_exists(StringToPath(item_path)) then
+		if is_executable(StringToPath(item_path)) then
+			local path_as_string = PathToString(StringToPath(item_path))
+			local returned_data = require(path_as_string)
+			package.loaded[path_as_string] = nil
+			if type(returned_data) == "table" then
+				return returned_data
+			end
+		else
+			print("item not executable: " .. PathToString(StringToPath(item_path)))
+			return {}
+		end
+	elseif command ~= nil then
+		print("item not found: " .. PathToString(StringToPath(item_path)) .. "")
+		return {}
+	end
+end
+
+Prompt = "$ "
 
 if item_exists({ "System", "Startup.lua" }) and not SafeMode then
 	require("System/Startup.lua")
 end
 print(get_text({ "System" }))
 
-local programs_item
 if SafeMode then
 	programs_item = "Backups"
 else
@@ -65,64 +130,14 @@ else
 end
 
 while true do
-	io.write("$ ")
+	io.write(Prompt)
 	local base_input = io.read()
-	Input = string.sub(base_input, 1, string.len(base_input)) .. " "
-
-	local item_path = string.sub(Input, 1, string.find(Input, " ") - 1)
-
-	if string.gsub(Input, "%s", "") == "" then
-		-- do nothing
-	elseif item_path == "move" then
-		local new_item = StringToPath(SplitString(Input, " ")[2])
-		if item_exists(new_item) then
-			CurrentItem = new_item
-		else
-			print("item not found: " .. PathToString(new_item))
-		end
-	elseif item_path == "pci" then
-		print(PathToString(CurrentItem))
-	elseif item_path == "help" then
-		print("Base Commands:")
-		print("help: Print this")
-		print("move: Move into another item (cd)")
-		print("pci: Print current item (pwd)")
-		print("read: Print text inside item (cat)")
-		print("items: Print names of items in an item, along with if they are immutable and if they are executable (ls)")
-		print("new: Make a new item (touch)")
-		print("write: Write text to an item (>)")
-		print("se: Give true or false to set an item as executable or not executable (chmod +x)")
-		print("remove: Remove an item (rm)")
-		print("download: get a file from the internet (curl)")
-		print("save: Save the file system")
-		print("exit: Save the file system and exit the operating system (shutdown)")
-		print("You can also put the path to an executable item to run that")
-	elseif item_exists({ "System", programs_item, item_path }) then
-		if is_executable({ "System", programs_item, item_path }) then
-			local returned_data = require("System/" .. programs_item .. "/" .. item_path)
-			if type(returned_data) == "table" then
-				for _, v in pairs(returned_data) do
-					print(v)
-				end
-			end
-			package.loaded["System/" .. programs_item .. "/" .. item_path] = nil
-		else
-			print("item not executable: System/" .. programs_item .. "/" .. item_path)
-		end
-	elseif item_exists(StringToPath(item_path)) then
-		if is_executable(StringToPath(item_path)) then
-			local path_as_string = PathToString(StringToPath(item_path))
-			local returned_data = require(path_as_string)
-			if type(returned_data) == "table" then
-				for _, v in pairs(returned_data) do
-					print(v)
-				end
-			end
-			package.loaded[path_as_string] = nil
-		else
-			print("item not executable: " .. PathToString(StringToPath(item_path)))
-		end
-	elseif Input ~= nil then
-		print("item not found: " .. PathToString(StringToPath(item_path)) .. "")
+	local result = {}
+	for _, section in pairs(SplitString(base_input, " -> ")) do
+		Input = string.sub(section, 1, string.len(section) - 1) .. table.concat(result, "\n")
+		result = EvaluateCommand(Input)
+	end
+	for _, i in pairs(result) do
+		print(i)
 	end
 end
