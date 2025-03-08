@@ -1,4 +1,4 @@
-local path = StringToPath(SplitString(Input, " ")[2])
+local path = StringToPath(RemoveQuotesIfApplicable(SplitStringOutsideQuotes(Input, " ")[2]))
 
 if path == {} then
 	print("no path found")

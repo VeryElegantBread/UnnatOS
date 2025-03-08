@@ -11,6 +11,49 @@ function SplitString(input_string, separator)
 	return return_table
 end
 
+function SplitStringOutsideQuotes(input_string, seperator)
+	input_string = input_string .. seperator
+	local return_table = {}
+
+	local segment_start = 1
+	local escaped = false
+	local quotations = false
+	for i = 1, #input_string - #seperator + 1, 1 do
+		local char = input_string:sub(i, i)
+		if char == "\\" then
+			escaped = not escaped
+		else
+			if char == "\"" and input_string:sub(i - 1, i - 1) == " " and not quotations and not escaped then
+				quotations = true
+			elseif char == "\"" and input_string:sub(i + 1, i + 1) == " " and quotations and not escaped then
+				quotations = false
+			elseif input_string:sub(i, i + #seperator - 1) == seperator and not quotations then
+				local segment = string.sub(input_string, segment_start, i - 1)
+				if segment then
+					table.insert(return_table, segment)
+				else
+					table.insert(return_table, "")
+				end
+				segment_start = i + #seperator
+			end
+			escaped = false
+		end
+	end
+
+	if quotations then
+		print("No end quotes found.")
+	end
+	return return_table
+end
+
+
+function RemoveQuotesIfApplicable(input_string)
+	if input_string:sub(1, 1) == "\"" and input_string:sub(input_string:len(), input_string:len()) == "\"" then
+		return input_string:sub(2, input_string:len() - 1)
+	end
+	return input_string
+end
+
 function StringToPath(input_string)
 	local path_table
 	if string.sub(input_string, 1, 1) == "~" then
@@ -53,9 +96,18 @@ end
 CurrentItem = {}
 local programs_item
 
+function GetCommandItem(command)
+	if item_exists({ "System", programs_item, command }) then
+		return { "System", programs_item, command }
+	elseif item_exists(StringToPath(command)) then
+		return StringToPath(command)
+	end
+end
+
 function EvaluateCommand(command)
 	local item_path = command:sub(1, command:find(" ") - 1)
 
+	local command_item = GetCommandItem(item_path)
 	if command:gsub("%s", "") == "" then
 		return {}
 	elseif item_path == "move" then
@@ -86,28 +138,16 @@ function EvaluateCommand(command)
 			"You can also put the path to an executable item to run that",
 			"Pipe with \" -> \"",
 		}
-	elseif item_exists({ "System", programs_item, item_path }) then
-		if is_executable({ "System", programs_item, item_path }) then
-			local returned_data = require("System/" .. programs_item .. "/" .. item_path)
-			package.loaded["System/" .. programs_item .. "/" .. item_path] = nil
+	elseif command_item then
+		if is_executable(command_item) then
+			local returned_data = require(PathToString(command_item))
+			package.loaded[PathToString(command_item)] = nil
 			if type(returned_data) == "table" then
 				return returned_data
 			end
 			return {}
 		else
-			print("item not executable: System/" .. programs_item .. "/" .. item_path)
-			return {}
-		end
-	elseif item_exists(StringToPath(item_path)) then
-		if is_executable(StringToPath(item_path)) then
-			local path_as_string = PathToString(StringToPath(item_path))
-			local returned_data = require(path_as_string)
-			package.loaded[path_as_string] = nil
-			if type(returned_data) == "table" then
-				return returned_data
-			end
-		else
-			print("item not executable: " .. PathToString(StringToPath(item_path)))
+			print("item not executable: " .. PathToString(command_item))
 			return {}
 		end
 	elseif command ~= nil then
@@ -133,8 +173,8 @@ while true do
 	io.write(Prompt)
 	local base_input = io.read()
 	local result = {}
-	for _, section in pairs(SplitString(base_input, " -> ")) do
-		Input = string.sub(section, 1, string.len(section) - 1) .. table.concat(result, "\n")
+	for _, section in pairs(SplitStringOutsideQuotes(base_input, " -> ")) do
+		Input = string.sub(section, 1, string.len(section)) .. " " .. table.concat(result, "\n")
 		result = EvaluateCommand(Input)
 	end
 	for _, i in pairs(result) do

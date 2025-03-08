@@ -1,5 +1,5 @@
-local split_input = SplitString(Input, " ")
-local url = split_input[2]
+local split_input = SplitStringOutsideQuotes(Input, " ")
+local url = RemoveQuotesIfApplicable(split_input[2])
 
 if url == "" then
 	print("url not given")
@@ -9,7 +9,7 @@ end
 local split_url = SplitString(url, "/")
 local path = StringToPath(split_url[#split_url])
 if #split_input > 3 then
-	path = StringToPath(split_input[3])
+	path = StringToPath(RemoveQuotesIfApplicable(split_input[3]))
 end
 
 local text = get_data(url)
