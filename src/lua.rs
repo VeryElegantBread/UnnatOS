@@ -1,7 +1,6 @@
 use indextree::{Arena, NodeId};
 use mlua::{prelude::{LuaTable, LuaError}, Error, Lua};
 use std::sync::{Arc, Mutex};
-use reqwest::blocking;
 
 use crate::{get_item, save_file_system, Item};
 
@@ -173,11 +172,20 @@ pub fn run(file_system: &mut Arc<Mutex<Arena<Item>>>, root: NodeId, file_path: &
     })?;
     lua.globals().set("set_text", lua_set_text)?;
 
-    let lua_get_data = lua.create_function(|_, url: String| {
-        if let Ok(data) = blocking::get(url) {
-            if let Ok(contents) = data.text() {
+    let lua_get_data = lua.create_function(|_, (url, headers): (String, Option<std::collections::HashMap<String, String>>)| {
+        let client = reqwest::blocking::Client::new();
+        let mut request = client.get(&url);
+
+        if let Some(headers_map) = headers {
+            for (key, value) in headers_map {
+                request = request.header(&key, &value);
+            }
+        }
+
+        if let Ok(response) = request.send() {
+            if let Ok(contents) = response.text() {
                 return Ok(Some(contents));
-            };
+            }
         };
         Ok(None)
     })?;
